@@ -32,37 +32,25 @@ Tasks.prototype = Object.assign({}, EventEmitter.prototype, {
       return;
     }
     this.channel.push('createTask', data);
-    // .receive('ok', tasks => {
-    //   this.setTasks(tasks);
-    // });
   },
 
   getTasks: function() {
     this.channel.push('getTasks');
-    // .receive('ok', tasks => {
-    //   this.setTasks(tasks);
-    // });
   },
 
   setTasks: function(newTasks) {
-    // let changed = false;
     for (const id in newTasks) {
       if (!isEqual(this.tasks[id], newTasks[id])) {
         let didExist = !!this.tasks[id];
-        // console.log('exists?', this.tasks[id]);
-        // console.log({ didExist });
         this.tasks[id] = newTasks[id];
         if (didExist) {
           this.emit(`change`, this.tasks[id]);
           this.emit(`change:${id}`, this.tasks[id]);
         }
-        // changed = true;
       }
     }
 
-    // if (changed) {
     this.emit('data', this.tasks);
-    // }
   }
 });
 

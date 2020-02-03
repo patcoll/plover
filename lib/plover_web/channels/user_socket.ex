@@ -17,10 +17,8 @@ defmodule PloverWeb.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(_params, socket, _connect_info) do
-    # {:ok, tasks} = Tasks.start_link()
     Tasks.start_link()
     {:ok, socket}
-    # {:ok, assign(socket, :tasks, tasks) |> IO.inspect(label: "connect socket")}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
