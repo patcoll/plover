@@ -6,15 +6,20 @@ defmodule Tasks do
   end
 
   def value do
-    Agent.get(__MODULE__, fn tasks ->
-      tasks
-    end)
+    Agent.get(__MODULE__, & &1)
   end
 
-  def create(data) do
-    Agent.update(__MODULE__, fn tasks ->
-      id = Map.get(data, "id")
-      tasks |> Map.put_new(id, data)
-    end)
+  def update(object) do
+    Agent.update(
+      __MODULE__,
+      &Map.put(&1, Map.get(object, "id"), object)
+    )
+  end
+
+  def delete(object) do
+    Agent.update(
+      __MODULE__,
+      &Map.delete(&1, Map.get(object, "id"))
+    )
   end
 end

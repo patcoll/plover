@@ -2,7 +2,8 @@ defmodule PloverWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel "tasks:*", PloverWeb.TasksChannel
+  channel "tasks", PloverWeb.TasksChannel
+  # channel "tasks:*", PloverWeb.TasksChannel
   # channel "flux:*", PloverWeb.FluxChannel
 
   # Socket params are passed from the client and can

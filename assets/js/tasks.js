@@ -1,59 +1,132 @@
-import isEqual from 'lodash-es/isEqual';
 import EventEmitter from 'eventemitter3';
 
-function Tasks({ socket }) {
-  EventEmitter.call(this);
+export default class Tasks extends EventEmitter {
+  /**
+   * Channel object
+   */
+  channel = null;
 
-  this.tasks = {};
+  /**
+   * What kind of data?
+   */
+  type = 'tasks';
 
-  if (socket.connectionState() === 'closed') {
-    this.emit('connect');
-    socket.connect();
-  }
+  /**
+   * Store the data here
+   */
+  data = {};
 
-  this.channel = socket.channel('tasks:lobby', {});
-  this.channel.on('tasks', tasks => {
-    console.log(`on('tasks'), tasks =`, tasks);
-    this.setTasks(tasks);
-  });
-  this.channel
-    .join()
-    .receive('ok', resp => {
-      this.emit('join.ok', resp);
-    })
-    .receive('error', err => {
-      this.emit('join.error', err);
+  constructor({ socket }) {
+    super();
+
+    if (socket.connectionState() === 'closed') {
+      this.emit('connect');
+      socket.connect();
+    }
+
+    this.channel = socket.channel(this.type);
+
+    this.channel.on(`${this.type}:created`, task => {
+      this._setTask(task);
+      this.emit('created', task);
     });
-}
 
-Tasks.prototype = Object.assign({}, EventEmitter.prototype, {
-  createTask: function(data = {}) {
-    if (Object.keys(data).length === 0) {
-      return;
-    }
-    this.channel.push('createTask', data);
-  },
+    this.channel.on(`${this.type}:updated`, task => {
+      this._setTask(task);
+      this.emit('updated', task);
+    });
 
-  getTasks: function() {
-    this.channel.push('getTasks');
-  },
+    this.channel.on(`${this.type}:deleted`, task => {
+      this._deleteTask(task);
+      this.emit('deleted', task);
+    });
 
-  setTasks: function(newTasks) {
-    for (const id in newTasks) {
-      if (!isEqual(this.tasks[id], newTasks[id])) {
-        let didExist = !!this.tasks[id];
-        this.tasks[id] = newTasks[id];
-        if (didExist) {
-          this.emit(`change`, this.tasks[id]);
-          this.emit(`change:${id}`, this.tasks[id]);
-        }
-      }
-    }
+    this.channel.on(`${this.type}:data`, tasks => {
+      this._setTasks(tasks);
+    });
 
-    this.emit('data', this.tasks);
+    this.channel
+      .join()
+      .receive('ok', resp => {
+        this.emit('join.ok', resp);
+      })
+      .receive('error', err => {
+        this.emit('join.error', err);
+      });
+
+    this.getTasks();
   }
-});
 
-Tasks.prototype.constructor = Tasks;
+  createTask(data = {}) {
+    return new Promise((resolve, reject) => {
+      this.channel
+        .push('createTask', data)
+        .receive('ok', task => {
+          resolve(task);
+        })
+        .receive('error', err => {
+          reject(err);
+        });
+    });
+  }
 
-export default Tasks;
+  updateTask(data = {}) {
+    return new Promise((resolve, reject) => {
+      this.channel
+        .push('updateTask', data)
+        .receive('ok', task => {
+          resolve(task);
+        })
+        .receive('error', err => {
+          reject(err);
+        });
+    });
+  }
+
+  deleteTask(data = {}) {
+    return new Promise((resolve, reject) => {
+      this.channel
+        .push('deleteTask', data)
+        .receive('ok', task => {
+          resolve(task);
+        })
+        .receive('error', err => {
+          reject(err);
+        });
+    });
+  }
+
+  getTasks() {
+    return new Promise((resolve, reject) => {
+      this.channel
+        .push('getTasks')
+        .receive('ok', tasks => {
+          this._setTasks(tasks);
+          resolve(tasks);
+        })
+        .receive('error', err => {
+          reject(err);
+        });
+    });
+  }
+
+  _setTask(task) {
+    this._setTasks({
+      [task.id]: task
+    });
+  }
+
+  _setTasks(newTasks) {
+    this.data = {
+      ...this.data,
+      ...newTasks
+    };
+
+    this.emit('data', this.data);
+  }
+
+  _deleteTask(task) {
+    const { [task.id]: _, ...result } = this.data;
+    this.data = result;
+  }
+}
