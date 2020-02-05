@@ -1,4 +1,8 @@
+import { useState, useEffect } from 'react';
 import EventEmitter from 'eventemitter3';
+import socket from './socket';
+import faker from 'faker';
+import uuid from 'uuid';
 
 export default class Tasks extends EventEmitter {
   /**
@@ -54,6 +58,7 @@ export default class Tasks extends EventEmitter {
         this.emit('join.error', err);
       });
 
+    // This grabs initial data, sets it, and emits data event.
     this.getTasks();
   }
 
@@ -129,4 +134,94 @@ export default class Tasks extends EventEmitter {
     const { [task.id]: _, ...result } = this.data;
     this.data = result;
   }
+}
+
+const store = new Tasks({ socket });
+
+function useTasks() {
+  const [tasks, setTasks] = useState(store.data);
+
+  useEffect(() => {
+    const onData = newTasks => setTasks(newTasks);
+    store.on('data', onData);
+
+    // addDebugging({ store });
+    setTimers({ store });
+
+    return () => store.off('data', onData);
+  }, []);
+
+  // return { store, tasks, setTasks };
+  return { store, tasks };
+}
+
+export { useTasks };
+
+function addDebugging({ store }) {
+  store.on('join.ok', resp => console.log('Joined successfully', resp));
+  store.on('join.error', resp => console.log('Unable to join', resp));
+
+  store.on('created', task => {
+    console.log(`on('created')`);
+    console.log('task created');
+    console.log('task =', JSON.stringify(task, null, 2));
+  });
+
+  store.on('updated', task => {
+    console.log(`on('updated')`);
+    console.log('task updated');
+    console.log('task =', JSON.stringify(task, null, 2));
+  });
+
+  store.on('deleted', task => {
+    console.log(`on('deleted')`);
+    console.log('task deleted');
+    console.log('task =', JSON.stringify(task, null, 2));
+  });
+
+  store.on('data', tasks => {
+    console.log(`on('data')`);
+    console.log('all tasks');
+    console.log('new length: ', Object.values(tasks).length);
+  });
+}
+
+function setTimers({ store }) {
+  setInterval(
+    () =>
+      store.createTask({
+        id: uuid.v4(),
+        firstName: faker.name.firstName(),
+        lastName: faker.name.lastName(),
+        address: faker.address.streetAddress(),
+        city: faker.address.city(),
+        state: faker.address.stateAbbr(),
+        zipCode: faker.address.zipCode(),
+        latitude: faker.address.latitude(),
+        longitude: faker.address.longitude()
+      }),
+    8000
+  );
+
+  setInterval(() => {
+    const keys = Object.keys(store.data);
+    if (keys.length === 0) {
+      return;
+    }
+    const randomId = keys[Math.floor(Math.random() * keys.length)];
+    store.deleteTask(store.data[randomId]);
+  }, 8000);
+
+  setInterval(() => {
+    const keys = Object.keys(store.data);
+    if (keys.length === 0) {
+      return;
+    }
+    const randomId = keys[Math.floor(Math.random() * keys.length)];
+    const updatedTaskData = Object.assign({}, store.data[randomId], {
+      latitude: faker.address.latitude(),
+      longitude: faker.address.longitude()
+    });
+    store.updateTask(updatedTaskData);
+  }, 2000);
 }
