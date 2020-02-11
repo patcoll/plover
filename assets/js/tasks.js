@@ -157,6 +157,7 @@ function useTasks() {
 
 export { useTasks };
 
+// eslint-disable-next-line no-unused-vars
 function addDebugging({ store }) {
   store.on('join.ok', resp => console.log('Joined successfully', resp));
   store.on('join.error', resp => console.log('Unable to join', resp));
@@ -186,6 +187,7 @@ function addDebugging({ store }) {
   });
 }
 
+// eslint-disable-next-line no-unused-vars
 function setTimers({ store }) {
   setInterval(
     () =>

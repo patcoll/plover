@@ -5,12 +5,10 @@ import 'phoenix_html';
 import { useTasks } from './tasks';
 import sortBy from 'lodash-es/sortBy';
 
-function App() {
+export default function() {
   const { tasks } = useTasks();
 
-  // console.log('tasks', tasks);
-
-  const values = sortBy(Object.values(tasks), ['lastName']);
+  const values = tasks |> Object.values |> sortBy(?, ['lastName']);
 
   return (
     <div className="App">
@@ -33,5 +31,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
