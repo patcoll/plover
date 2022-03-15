@@ -37,7 +37,7 @@
     "eventemitter3": "^4.0.0",
     "faker": "^4.1.0",
     "glob": "*",
-    "lodash-es": "^4.17.15",
+    "lodash-es": "^4.17.21",
     "mini-css-extract-plugin": "^0.9.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
     "prettier": "^1.19.1",
